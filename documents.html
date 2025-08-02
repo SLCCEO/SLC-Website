@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Documents | SLC Portal</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background-color: #0a0a0a;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background-color: #1a1a1a;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(255, 0, 0, 0.3);
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+      overflow-y: auto;
+      max-height: 90vh;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #ff4444;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+      text-align: left;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    li {
+      background-color: #2a2a2a;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      color: #ddd;
+      word-break: break-word;
+    }
+
+    a {
+      color: #ff4444;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    #logoutBtn, #uploadBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #ff4444;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #logoutBtn:hover, #uploadBtn:hover {
+      background-color: #e63333;
+    }
+
+    #fileInput {
+      margin-top: 10px;
+      color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Upload and View Documents</h2>
+    <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" />
+    <button id="uploadBtn">Upload Document</button>
+
+    <ul id="documentList">Loading documents...</ul>
+
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      orderBy,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+    import {
+      getStorage,
+      ref,
+      uploadBytes,
+      getDownloadURL
+    } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-storage.js";
+
+    // Your Firebase config - REPLACE with your real config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const fileInput = document.getElementById("fileInput");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const documentList = document.getElementById("documentList");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // Redirect if not logged in, else load docs
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        loadDocuments();
+      }
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth).then(() => window.location.href = "login.html");
+    });
+
+    uploadBtn.addEventListener("click", async () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Please select a file to upload.");
+        return;
+      }
+
+      const user = auth.currentUser;
+      if (!user) {
+        alert("You must be logged in to upload files.");
+        return;
+      }
+
+      try {
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "Uploading...";
+
+        // Create a storage reference
+        const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
+
+        // Upload file
+        await uploadBytes(storageRef, file);
+
+        // Get download URL
+        const url = await getDownloadURL(storageRef);
+
+        // Save metadata to Firestore
+        await addDoc(collection(db, "files"), {
+          name: file.name,
+          url: url,
+          uploadedBy: user.email,
+          timestamp: serverTimestamp()
+        });
+
+        alert("Upload successful!");
+        fileInput.value = ""; // reset input
+        loadDocuments();     // refresh document list
+      } catch (error) {
+        console.error("Upload failed", error);
+        alert("Upload failed: " + error.message);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = "Upload Document";
+      }
+    });
+
+    async function loadDocuments() {
+      documentList.innerHTML = "Loading documents...";
+      try {
+        const q = query(collection(db, "files"), orderBy("timestamp", "desc"));
+        const snapshot = await getDocs(q);
+
+        documentList.innerHTML = "";
+        if (snapshot.empty) {
+          documentList.innerHTML = "<li>No documents uploaded yet.</li>";
+          return;
+        }
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const li = document.createElement("li");
+          li.innerHTML = `<a href="${data.url}" target="_blank" rel="noopener noreferrer">${data.name}</a><br><small>Uploaded by: ${data.uploadedBy}</small>`;
+          documentList.appendChild(li);
+        });
+      } catch (error) {
+        console.error("Error loading documents:", error);
+        documentList.innerHTML = "<li>Failed to load documents.</li>";
+      }
+    }
+  </script>
+</body>
+</html>

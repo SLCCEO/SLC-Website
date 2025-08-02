@@ -106,3 +106,23 @@ auth.signInWithEmailAndPassword(email, password)
     console.error("Login error:", error.message);
     alert("Login failed: " + error.message);
   });
+
+
+  import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import firebaseApp from './firebase-config'; // or wherever your config/init is
+
+const auth = getAuth(firebaseApp);
+
+signInWithEmailAndPassword(auth, email, password)
+  .then((userCredential) => {
+    // ✅ Login succeeded
+    const user = userCredential.user;
+    console.log("Logged in as:", user.email);
+
+    // ✅ Redirect or show a page
+    window.location.href = "dashboard.html"; // or any page you want
+  })
+  .catch((error) => {
+    console.error("Login failed:", error.message);
+    alert("Login failed: " + error.message);
+  });

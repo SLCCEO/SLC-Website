@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard | SLC Portal</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background-color: #0a0a0a;
+      color: #f1f1f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background-color: #1a1a1a;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(255, 0, 0, 0.3);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      color: #ff4444;
+    }
+
+    p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    input[type="file"] {
+      margin-top: 15px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #ff4444;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #e63333;
+    }
+
+    .logout {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Welcome to Your Dashboard</h2>
+    <p>Role: <strong id="userRole">Loading...</strong></p>
+
+    <form id="uploadForm">
+      <p>Upload a PDF or document</p>
+      <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" />
+      <button type="submit">Upload</button>
+    </form>
+
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    // Simulate setting the user role from Firebase Auth
+    document.addEventListener("DOMContentLoaded", () => {
+      // Replace this line with Firebase role retrieval logic
+      document.getElementById("userRole").textContent = "user";
+    });
+
+    function logout() {
+      // Firebase Auth logout logic
+      alert("You have been logged out.");
+      // Redirect or clear auth state here
+    }
+
+    document.getElementById("uploadForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) {
+        alert("Please select a file to upload.");
+        return;
+      }
+
+      // Stub: Replace with Firebase Storage logic
+      alert(`Uploading ${file.name}... (functionality to be added)`);
+    });
+  </script>
+</body>
+</html>
