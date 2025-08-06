@@ -60,7 +60,7 @@
 </head>
 <body>
   <header>
-    <h1>Singularity Laboratories Corporation  Secure Portal</h1>
+    <h1>Singularity Laboratories Corporation Secure Portal</h1>
     <nav>
       <a href="index.html">Home</a>
       <a href="login.html">Login</a>
@@ -88,29 +88,45 @@
     <p>This area is restricted to verified personnel.</p>
   </section>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js"></script>
-
-  <script>
-    // Firebase config (replace with your actual config)
+  <!-- FIREBASE LOGIN SCRIPT -->
+  <script type="module">
+    // Firebase Config via Vite env variables
     const firebaseConfig = {
-      apiKey: "AIzaSyAj7H8Bi3PcLGe8gzcPtHaL-ZFsrl-TF5c",
-      authDomain: "slc-09.firebaseapp.com",
-      projectId: "slc-09",
-      appId: "1:318739755710:web:10d6a9f9de97c94f8224ef",
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID
     };
-    firebase.initializeApp(firebaseConfig);
 
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      sendEmailVerification,
+      signOut,
+      sendPasswordResetEmail,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    function login() {
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    window.login = function () {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
 
-      auth.signInWithEmailAndPassword(email, pass)
+      signInWithEmailAndPassword(auth, email, pass)
         .then(userCred => {
           if (!userCred.user.emailVerified) {
             alert("Please verify your email before logging in.");
@@ -118,51 +134,48 @@
           }
         })
         .catch(err => alert(err.message));
-    }
+    };
 
-    function signup() {
+    window.signup = function () {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
 
-      auth.createUserWithEmailAndPassword(email, pass)
+      createUserWithEmailAndPassword(auth, email, pass)
         .then(userCred => {
-          userCred.user.sendEmailVerification();
-          db.collection("users").doc(userCred.user.uid).set({
-            role: "recruit"
-          });
+          sendEmailVerification(userCred.user);
+          setDoc(doc(db, "users", userCred.user.uid), { role: "recruit" });
           alert("Verification email sent. Please check your inbox.");
           logout();
         })
         .catch(err => alert(err.message));
-    }
+    };
 
-    function logout() {
-      auth.signOut();
-    }
+    window.logout = function () {
+      signOut(auth);
+    };
 
-    function sendPasswordReset() {
+    window.sendPasswordReset = function () {
       const email = document.getElementById("email").value;
       if (!email) return alert("Enter your email first.");
 
-      auth.sendPasswordResetEmail(email)
+      sendPasswordResetEmail(auth, email)
         .then(() => alert("Password reset email sent."))
         .catch(err => alert(err.message));
-    }
+    };
 
-    auth.onAuthStateChanged(user => {
+    onAuthStateChanged(auth, (user) => {
       if (user && user.emailVerified) {
         document.getElementById("user-info").style.display = "block";
         document.getElementById("login-form").style.display = "none";
         document.getElementById("user-email").textContent = user.email;
 
-        // Get user role
-        db.collection("users").doc(user.uid).get().then(doc => {
-          const role = doc.data()?.role || "recruit";
+        const userDocRef = doc(db, "users", user.uid);
+        getDoc(userDocRef).then(docSnap => {
+          const role = docSnap.exists() ? docSnap.data().role : "recruit";
           document.getElementById("user-role").textContent = role;
           document.getElementById("user-role").className = role;
           document.getElementById("members-only").style.display = "block";
         });
-
       } else {
         document.getElementById("user-info").style.display = "none";
         document.getElementById("login-form").style.display = "block";
