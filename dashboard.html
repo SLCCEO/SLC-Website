@@ -2,104 +2,162 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard | SLC Portal</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Documents | SLC Dashboard</title>
   <style>
     body {
       background-color: #0a0a0a;
       color: #f1f1f1;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
       display: flex;
-      align-items: center;
-      justify-content: center;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #1a1a1a;
       height: 100vh;
+      padding-top: 20px;
+      border-right: 2px solid red;
+      position: fixed;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Profile container */
+    .profile {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 0 10px;
+      border-bottom: 1px solid #333;
+      width: 100%;
+    }
+
+    .profile img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid red;
+      margin-bottom: 8px;
+    }
+
+    .profile-name {
+      font-weight: bold;
+      color: red;
+      font-size: 18px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 15px 25px;
+      color: #f1f1f1;
+      text-decoration: none;
+      border-bottom: 1px solid #333;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: left;
+    }
+
+    .sidebar a:hover {
+      background-color: #2a2a2a;
+      color: red;
+    }
+
+    .main-content {
+      margin-left: 220px;
+      flex-grow: 1;
+    }
+
+    header, footer {
+      background-color: #1a1a1a;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 2px solid red;
+    }
+
+    h1 {
+      color: red;
       margin: 0;
     }
 
-    .card {
-      background-color: #1a1a1a;
+    .document-list {
       padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 12px rgba(255, 0, 0, 0.3);
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
+      max-width: 1000px;
+      margin: auto;
     }
 
-    h2 {
-      margin-bottom: 10px;
-      color: #ff4444;
-    }
-
-    p {
-      margin: 10px 0;
-      font-size: 16px;
-    }
-
-    input[type="file"] {
-      margin-top: 15px;
-      margin-bottom: 10px;
-    }
-
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background-color: #ff4444;
-      border: none;
+    .document-item {
+      background-color: #1e1e1e;
+      padding: 20px;
+      margin-bottom: 15px;
+      border: 1px solid #333;
       border-radius: 5px;
-      color: white;
-      cursor: pointer;
-      transition: background 0.3s ease;
     }
 
-    button:hover {
-      background-color: #e63333;
-    }
-
-    .logout {
-      margin-top: 20px;
+    iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Welcome to Your Dashboard</h2>
-    <p>Role: <strong id="userRole">Loading...</strong></p>
 
-    <form id="uploadForm">
-      <p>Upload a PDF or document</p>
-      <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" />
-      <button type="submit">Upload</button>
-    </form>
+  <div class="sidebar">
+    <div class="profile">
+      <img src="https://via.placeholder.com/80" alt="Profile Picture" id="profilePic" />
+      <div class="profile-name" id="profileName">Victor Blackwell</div>
+    </div>
 
-    <button class="logout" onclick="logout()">Logout</button>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="documents.html">Documents</a>
+    <a href="reports.html">Reports</a>
+    <a href="settings.html">Settings</a>
+    <a href="logout.html">Logout</a>
+  </div>
+
+  <div class="main-content">
+    <header>
+      <h1>Accessible Documents</h1>
+    </header>
+
+    <div class="document-list" id="documentsContainer">
+      <!-- Documents will be dynamically inserted here -->
+    </div>
   </div>
 
   <script>
-    // Simulate setting the user role from Firebase Auth
-    document.addEventListener("DOMContentLoaded", () => {
-      // Replace this line with Firebase role retrieval logic
-      document.getElementById("userRole").textContent = "user";
-    });
+    // Replace with actual Firebase logic or user data
+    const user = {
+      name: "Victor Blackwell",
+      photoURL: "https://preview.redd.it/zrs8dnnxs0581.png?auto=webp&s=536a1d8496dabb238a347f1874ec7cce9a88013e"};
 
-    function logout() {
-      // Firebase Auth logout logic
-      alert("You have been logged out.");
-      // Redirect or clear auth state here
-    }
+    // Update profile picture and name dynamically if needed
+    document.getElementById("profilePic").src = user.photoURL;
+    document.getElementById("profileName").textContent = user.name;
 
-    document.getElementById("uploadForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const file = document.getElementById("fileInput").files[0];
-      if (!file) {
-        alert("Please select a file to upload.");
-        return;
-      }
+    const docs = [
+      { name: "Sample PDF", url: "https://example.com/sample.pdf" },
+      { name: "Another PDF", url: "https://example.com/doc2.pdf" }
+    ];
 
-      // Stub: Replace with Firebase Storage logic
-      alert(`Uploading ${file.name}... (functionality to be added)`);
+    const container = document.getElementById("documentsContainer");
+    docs.forEach(doc => {
+      container.innerHTML += `
+        <div class="document-item">
+          <h3>${doc.name}</h3>
+          <iframe src="${doc.url}"></iframe>
+        </div>
+      `;
     });
   </script>
 </body>
 </html>
+
+
