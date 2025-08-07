@@ -1,162 +1,689 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Documents | SLC Dashboard</title>
-  <style>
-    body {
-      background-color: #0a0a0a;
-      color: #f1f1f1;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      display: flex;
-    }
+    <meta charset="UTF-8" />
+    <title>SLC Dashboard with Firebase Auth & Settings</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #f1f1f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+        }
 
-    .sidebar {
-      width: 220px;
-      background-color: #1a1a1a;
-      height: 100vh;
-      padding-top: 20px;
-      border-right: 2px solid red;
-      position: fixed;
-      top: 0;
-      left: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            height: 100vh;
+            padding-top: 20px;
+            border-right: 2px solid red;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-    /* Profile container */
-    .profile {
-      text-align: center;
-      margin-bottom: 20px;
-      padding: 0 10px;
-      border-bottom: 1px solid #333;
-      width: 100%;
-    }
+        /* Profile container */
+        .profile {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+            border-bottom: 1px solid #333;
+            width: 100%;
+        }
 
-    .profile img {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid red;
-      margin-bottom: 8px;
-    }
+        .profile img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid red;
+            margin-bottom: 8px;
+        }
 
-    .profile-name {
-      font-weight: bold;
-      color: red;
-      font-size: 18px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+        .profile-name {
+            font-weight: bold;
+            color: red;
+            font-size: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    .sidebar a {
-      display: block;
-      padding: 15px 25px;
-      color: #f1f1f1;
-      text-decoration: none;
-      border-bottom: 1px solid #333;
-      width: 100%;
-      box-sizing: border-box;
-      text-align: left;
-    }
+        .sidebar a, .sidebar button {
+            display: block;
+            padding: 15px 25px;
+            color: #f1f1f1;
+            text-decoration: none;
+            border-bottom: 1px solid #333;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
 
-    .sidebar a:hover {
-      background-color: #2a2a2a;
-      color: red;
-    }
+        .sidebar a:hover, .sidebar button:hover {
+            background-color: #2a2a2a;
+            color: red;
+        }
 
-    .main-content {
-      margin-left: 220px;
-      flex-grow: 1;
-    }
+        .sidebar a.active, .sidebar button.active {
+            background-color: #2a2a2a;
+            color: red;
+            font-weight: bold;
+        }
 
-    header, footer {
-      background-color: #1a1a1a;
-      padding: 15px;
-      text-align: center;
-      border-bottom: 2px solid red;
-    }
+        .main-content {
+            margin-left: 250px;
+            flex-grow: 1;
+            padding: 20px;
+        }
 
-    h1 {
-      color: red;
-      margin: 0;
-    }
+        header {
+            background-color: #1a1a1a;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid red;
+            margin-bottom: 20px;
+        }
 
-    .document-list {
-      padding: 30px;
-      max-width: 1000px;
-      margin: auto;
-    }
+        h1 {
+            color: red;
+            margin: 0;
+        }
 
-    .document-item {
-      background-color: #1e1e1e;
-      padding: 20px;
-      margin-bottom: 15px;
-      border: 1px solid #333;
-      border-radius: 5px;
-    }
+        /* Common styles for tables and settings forms */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #2a2a2a;
+            color: red;
+        }
+        tr:nth-child(even) {
+            background-color: #1f1f1f;
+        }
+        button.action-btn {
+            background-color: red;
+            color: #fff;
+            border: none;
+            padding: 6px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            margin-right: 5px;
+        }
+        button.action-btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
 
-    iframe {
-      width: 100%;
-      height: 500px;
-      border: none;
-    }
-  </style>
+        .document-list {
+            padding: 0;
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .document-item {
+            background-color: #1e1e1e;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+        }
+        
+        .document-item h3 {
+            margin-top: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+
+        /* Styles for forms */
+        .form-section {
+            background-color: #1e1e1e;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .form-section h3 {
+            margin-top: 0;
+            color: red;
+        }
+        .form-section input[type="text"], .form-section input[type="password"], .form-section input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            background-color: #2a2a2a;
+            color: #f1f1f1;
+            border: 1px solid #444;
+            border-radius: 3px;
+        }
+        .form-section .submit-btn {
+            background-color: red;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 16px;
+        }
+        .form-section .submit-btn:hover {
+            background-color: #c00;
+        }
+        .status-message {
+            margin-top: 10px;
+            font-style: italic;
+        }
+        
+        /* Hide all panels by default */
+        .panel {
+            display: none;
+        }
+    </style>
 </head>
 <body>
 
-  <div class="sidebar">
-    <div class="profile">
-      <img src="https://via.placeholder.com/80" alt="Profile Picture" id="profilePic" />
-      <div class="profile-name" id="profileName">Victor Blackwell</div>
-    </div>
-
-    <a href="dashboard.html">Dashboard</a>
-    <a href="documents.html">Documents</a>
-    <a href="reports.html">Reports</a>
-    <a href="settings.html">Settings</a>
-    <a href="logout.html">Logout</a>
-  </div>
-
-  <div class="main-content">
-    <header>
-      <h1>Accessible Documents</h1>
-    </header>
-
-    <div class="document-list" id="documentsContainer">
-      <!-- Documents will be dynamically inserted here -->
-    </div>
-  </div>
-
-  <script>
-    // Replace with actual Firebase logic or user data
-    const user = {
-      name: "Victor Blackwell",
-      photoURL: "https://preview.redd.it/zrs8dnnxs0581.png?auto=webp&s=536a1d8496dabb238a347f1874ec7cce9a88013e"};
-
-    // Update profile picture and name dynamically if needed
-    document.getElementById("profilePic").src = user.photoURL;
-    document.getElementById("profileName").textContent = user.name;
-
-    const docs = [
-      { name: "Sample PDF", url: "https://example.com/sample.pdf" },
-      { name: "Another PDF", url: "https://example.com/doc2.pdf" }
-    ];
-
-    const container = document.getElementById("documentsContainer");
-    docs.forEach(doc => {
-      container.innerHTML += `
-        <div class="document-item">
-          <h3>${doc.name}</h3>
-          <iframe src="${doc.url}"></iframe>
+    <div class="sidebar">
+        <div class="profile">
+            <img src="https://preview.redd.it/zrs8dnnxs0581.png?auto=webp&s=536a1d8496dabb238a347f1874ec7cce9a88013e" alt="Profile Picture" id="profilePic" />
+            <div class="profile-name" id="profileName">Loading...</div>
+            <div style="color:#777; font-size:14px; margin-top:5px;" id="roleDisplay">Role: </div>
         </div>
-      `;
-    });
-  </script>
+
+        <a href="#" class="nav-link active" data-panel="dashboardPanel">Dashboard</a>
+        <a href="#" class="nav-link" data-panel="documentsPanel">Documents</a>
+        <a href="#" class="nav-link" data-panel="reportsPanel">Reports</a>
+        <a href="#" class="nav-link" data-panel="settingsPanel">Settings</a>
+
+        <button class="nav-link admin-panel-link" data-panel="moderatorPanel" style="display:none;">Moderator Panel</button>
+        <button class="nav-link admin-panel-link" data-panel="adminPanel" style="display:none;">Admin Panel</button>
+        <button class="nav-link admin-panel-link" data-panel="ctoPanel" style="display:none;">CTO Panel</button>
+        <button class="nav-link admin-panel-link" data-panel="cooPanel" style="display:none;">COO Panel</button>
+        <button class="nav-link admin-panel-link" data-panel="ceoPanel" style="display:none;">CEO Panel</button>
+
+        <a href="logout.html">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h1 id="mainHeader">SLC Dashboard</h1>
+        </header>
+
+        <div id="dashboardPanel" class="panel" style="display:block;">
+            <h2>Welcome to the SLC Dashboard</h2>
+            <p>Use the sidebar to navigate.</p>
+
+            <div class="form-section">
+                <h3>Upload a Document</h3>
+                <input type="file" id="fileInput" />
+                <button class="submit-btn" id="uploadBtn">Upload</button>
+                <div id="uploadStatus" class="status-message"></div>
+            </div>
+        </div>
+
+        <div id="documentsPanel" class="panel">
+            <h2>Accessible Documents</h2>
+            <div class="document-list" id="documentsContainer">
+                </div>
+        </div>
+
+        <div id="reportsPanel" class="panel">
+            <h2>Reports</h2>
+            <p>Coming soon...</p>
+        </div>
+
+        <div id="settingsPanel" class="panel">
+            <h2>Settings</h2>
+            
+            <div class="form-section">
+                <h3>Change Username</h3>
+                <input type="text" id="newUsernameInput" placeholder="Enter new username" />
+                <button class="submit-btn" id="updateUsernameBtn">Update Username</button>
+                <div id="usernameStatus" class="status-message"></div>
+            </div>
+
+            <div class="form-section">
+                <h3>Update Profile Picture</h3>
+                <input type="file" id="profilePicInput" />
+                <button class="submit-btn" id="updateProfilePicBtn">Update Profile Picture</button>
+                <div id="profilePicStatus" class="status-message"></div>
+            </div>
+
+            <div class="form-section">
+                <h3>Change Password</h3>
+                <input type="password" id="newPasswordInput" placeholder="Enter new password" />
+                <input type="password" id="confirmPasswordInput" placeholder="Confirm new password" />
+                <button class="submit-btn" id="updatePasswordBtn">Update Password</button>
+                <div id="passwordStatus" class="status-message"></div>
+            </div>
+
+        </div>
+
+        <div id="moderatorPanel" class="panel">
+            <h2>Moderator Panel</h2>
+            <h3>User Management</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="modSelectAllUsers" /></th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="modUserTableBody"></tbody>
+            </table>
+            <button id="modBulkMuteBtn" class="action-btn" disabled>Mute Selected</button>
+            <button id="modBulkRemoveDocsBtn" class="action-btn" disabled>Remove Documents of Selected Users</button>
+            <button id="modBulkResetPassBtn" class="action-btn" disabled>Reset Passwords of Selected Users</button>
+        </div>
+
+        <div id="adminPanel" class="panel">
+            <h2>Admin Panel</h2>
+            <h3>User Management</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="adminSelectAllUsers" /></th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="adminUserTableBody"></tbody>
+            </table>
+            <button id="adminBulkWarnBtn" class="action-btn" disabled>Warn Selected</button>
+            <button id="adminBulkBanBtn" class="action-btn" disabled>Ban Selected</button>
+            <button id="adminBulkRemoveBtn" class="action-btn" disabled>Remove Selected</button>
+        </div>
+
+        <div id="ctoPanel" class="panel">
+            <h2>CTO Panel</h2>
+            <h3>For Testing_Alt, Coded by Yours Truly, Jeremiah_YT</h3>
+            <p>Manage all aspects of the business and have ultimate control over the platform.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="ctoSelectAllUsers" /></th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>IP Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ctoUserTableBody"></tbody>
+            </table>
+            <button id="ctoBulkIPBanBtn" class="action-btn" disabled>IP Ban Selected</button>
+            <button id="ctoBulkBanBtn" class="action-btn" disabled>Ban Selected</button>
+            <button id="ctoBulkRemoveBtn" class="action-btn" disabled>Remove Selected</button>
+        </div>
+
+        <div id="cooPanel" class="panel">
+            <h2>COO Panel</h2>
+            <h3>for PlantBirdman, Coded by Yours Truly, Jeremiah_YT</h3>
+            <p>Manage all aspects of the business and have ultimate control over the platform.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="cooSelectAllUsers" /></th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>IP Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="cooUserTableBody"></tbody>
+            </table>
+            <button id="cooBulkIPBanBtn" class="action-btn" disabled>IP Ban Selected</button>
+            <button id="cooBulkBanBtn" class="action-btn" disabled>Ban Selected</button>
+            <button id="cooBulkRemoveBtn" class="action-btn" disabled>Remove Selected</button>
+        </div>
+
+        <div id="ceoPanel" class="panel">
+            <h2>CEO Control Panel</h2>
+            <h3>for Victorblackwell, Coded by Yours Truly, Jeremiah_YT</h3>
+            <p>Manage all aspects of the business and have ultimate control over the platform.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="ceoSelectAllUsers" /></th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>IP Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ceoUserTableBody"></tbody>
+            </table>
+            <button id="ceoBulkIPBanBtn" class="action-btn" disabled>IP Ban Selected</button>
+            <button id="ceoBulkBanBtn" class="action-btn" disabled>Ban Selected</button>
+            <button id="ceoBulkRemoveBtn" class="action-btn" disabled>Remove Selected</button>
+        </div>
+    </div>
+
+    <script>
+        // =========================
+        // Set current logged-in user role here: 'moderator', 'admin', 'cto', 'coo', or 'ceo'
+        const currentUserRole = 'ceo'; // change this for testing
+        // =========================
+
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+        // --- END FIREBASE CONFIGURATION ---
+
+        // --- IMPORTANT: AUTHENTICATION ---
+        // In a real application, a user would have to sign in first.
+        // For testing, you would need to use a function like this before any other Firebase calls:
+        // firebase.auth().signInWithEmailAndPassword("test@example.com", "password")
+        //     .then(userCredential => {
+        //         // User is signed in
+        //         const user = userCredential.user;
+        //         console.log("Logged in user:", user);
+        //     })
+        //     .catch(error => {
+        //         console.error("Login failed:", error);
+        //     });
+        // We will assume a user is already signed in for this example.
+
+        const users = [
+            {id: 'u1', username: 'UserOne', email: 'user1@example.com', role: 'user', status: 'active', ip: '192.168.0.101'},
+            {id: 'u2', username: 'UserTwo', email: 'user2@example.com', role: 'moderator', status: 'active', ip: '192.168.0.102'},
+            {id: 'u3', username: 'UserThree', email: 'user3@example.com', role: 'admin', status: 'banned', ip: '192.168.0.103'},
+            {id: 'u4', username: 'UserFour', email: 'user4@example.com', role: 'user', status: 'active', ip: '192.168.0.104'},
+            {id: 'u5', username: 'UserFive', email: 'user5@example.com', role: 'user', status: 'muted', ip: '192.168.0.105'},
+            {id: 'u6', username: 'ForTesting_Alt', email: 'cto@example.com', role: 'cto', status: 'active', ip: '192.168.0.106'},
+            {id: 'u7', username: 'PlantBirdman', email: 'coo@example.com', role: 'coo', status: 'active', ip: '192.168.0.107'},
+            {id: 'u8', username: 'Victorblackwell', email: 'ceo@example.com', role: 'ceo', status: 'active', ip: '192.168.0.108'}
+        ];
+
+        // This is a simplified user object for UI purposes. In a real app, this would be `auth.currentUser`.
+        const currentUser = users.find(u => u.role === currentUserRole) || users[0];
+
+        const documents = [
+            { id: 'd1', name: "Q3 Financial Report", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+            { id: 'd2', name: "Strategic Plan 2025", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
+            { id: 'd3', name: "Team Productivity Metrics", url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" }
+        ];
+
+        // UI Element References
+        const profileName = document.getElementById('profileName');
+        const profilePic = document.getElementById('profilePic');
+        const roleDisplay = document.getElementById('roleDisplay');
+
+        // Initial UI setup
+        profileName.textContent = currentUser.username;
+        roleDisplay.textContent = 'Role: ' + currentUser.role.toUpperCase();
+
+        function setupRoleSpecificPanels() {
+            const allPanelLinks = document.querySelectorAll('.admin-panel-link');
+            allPanelLinks.forEach(link => link.style.display = 'none');
+            const accessLevels = {
+                'moderator': ['moderatorPanel'],
+                'admin': ['moderatorPanel', 'adminPanel'],
+                'cto': ['moderatorPanel', 'adminPanel', 'ctoPanel'],
+                'coo': ['moderatorPanel', 'adminPanel', 'cooPanel'],
+                'ceo': ['moderatorPanel', 'adminPanel', 'ctoPanel', 'cooPanel', 'ceoPanel']
+            };
+            const panelsToShow = accessLevels[currentUserRole] || [];
+            panelsToShow.forEach(panelId => {
+                document.querySelector(`button[data-panel="${panelId}"]`).style.display = 'block';
+            });
+        }
+        setupRoleSpecificPanels();
+
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                const panelId = link.dataset.panel;
+                document.querySelectorAll('.panel').forEach(panel => panel.style.display = 'none');
+                if (panelId) {
+                    const panel = document.getElementById(panelId);
+                    if (panel) panel.style.display = 'block';
+                }
+            });
+        });
+
+        const documentsContainer = document.getElementById('documentsContainer');
+        function renderDocumentsPanel() {
+            documentsContainer.innerHTML = '';
+            documents.forEach(doc => {
+                documentsContainer.innerHTML += `
+                    <div class="document-item">
+                        <h3>${doc.name}</h3>
+                        <iframe src="${doc.url}"></iframe>
+                    </div>
+                `;
+            });
+        }
+        renderDocumentsPanel();
+
+        // --- DASHBOARD DOCUMENT UPLOAD LOGIC ---
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        uploadBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) {
+                uploadStatus.style.color = 'red';
+                uploadStatus.textContent = 'Please select a file to upload.';
+                return;
+            }
+
+            uploadStatus.style.color = '#f1f1f1';
+            uploadStatus.textContent = `Uploading "${file.name}"...`;
+            uploadBtn.disabled = true;
+
+            const storageRef = storage.ref(`documents/${file.name}`);
+            const uploadTask = storageRef.put(file);
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    uploadStatus.textContent = `Uploading "${file.name}"... ${progress.toFixed(2)}%`;
+                }, 
+                (error) => {
+                    console.error("Upload failed", error);
+                    uploadStatus.style.color = 'red';
+                    uploadStatus.textContent = `Upload failed: ${error.message}`;
+                    uploadBtn.disabled = false;
+                }, 
+                () => {
+                    uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                        documents.push({
+                            id: 'd' + (documents.length + 1),
+                            name: file.name,
+                            url: downloadURL
+                        });
+                        renderDocumentsPanel();
+                        uploadStatus.style.color = '#28a745';
+                        uploadStatus.textContent = `File "${file.name}" uploaded successfully!`;
+                        uploadBtn.disabled = false;
+                        fileInput.value = '';
+                    });
+                }
+            );
+        });
+
+        // --- SETTINGS PANEL LOGIC (NEW) ---
+        const newUsernameInput = document.getElementById('newUsernameInput');
+        const updateUsernameBtn = document.getElementById('updateUsernameBtn');
+        const usernameStatus = document.getElementById('usernameStatus');
+
+        const profilePicInput = document.getElementById('profilePicInput');
+        const updateProfilePicBtn = document.getElementById('updateProfilePicBtn');
+        const profilePicStatus = document.getElementById('profilePicStatus');
+        
+        const newPasswordInput = document.getElementById('newPasswordInput');
+        const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+        const updatePasswordBtn = document.getElementById('updatePasswordBtn');
+        const passwordStatus = document.getElementById('passwordStatus');
+
+        // Update Username
+        updateUsernameBtn.addEventListener('click', () => {
+            const user = auth.currentUser;
+            const newUsername = newUsernameInput.value.trim();
+            if (!user) {
+                usernameStatus.style.color = 'red';
+                usernameStatus.textContent = 'You must be logged in to change your username.';
+                return;
+            }
+            if (!newUsername) {
+                usernameStatus.style.color = 'red';
+                usernameStatus.textContent = 'Username cannot be empty.';
+                return;
+            }
+
+            user.updateProfile({
+                displayName: newUsername
+            }).then(() => {
+                profileName.textContent = newUsername; // Update UI
+                usernameStatus.style.color = '#28a745';
+                usernameStatus.textContent = 'Username updated successfully!';
+                newUsernameInput.value = '';
+            }).catch(error => {
+                console.error("Error updating username:", error);
+                usernameStatus.style.color = 'red';
+                usernameStatus.textContent = `Error: ${error.message}`;
+            });
+        });
+
+        // Update Profile Picture
+        updateProfilePicBtn.addEventListener('click', () => {
+            const user = auth.currentUser;
+            const file = profilePicInput.files[0];
+            if (!user) {
+                profilePicStatus.style.color = 'red';
+                profilePicStatus.textContent = 'You must be logged in to change your profile picture.';
+                return;
+            }
+            if (!file) {
+                profilePicStatus.style.color = 'red';
+                profilePicStatus.textContent = 'Please select a picture to upload.';
+                return;
+            }
+
+            const storageRef = storage.ref(`profilePictures/${user.uid}/${file.name}`);
+            const uploadTask = storageRef.put(file);
+
+            profilePicStatus.textContent = 'Uploading...';
+            updateProfilePicBtn.disabled = true;
+
+            uploadTask.then(snapshot => {
+                return snapshot.ref.getDownloadURL();
+            }).then(downloadURL => {
+                return user.updateProfile({
+                    photoURL: downloadURL
+                });
+            }).then(() => {
+                profilePic.src = user.photoURL; // Update UI
+                profilePicStatus.style.color = '#28a745';
+                profilePicStatus.textContent = 'Profile picture updated successfully!';
+                profilePicInput.value = '';
+                updateProfilePicBtn.disabled = false;
+            }).catch(error => {
+                console.error("Error updating profile picture:", error);
+                profilePicStatus.style.color = 'red';
+                profilePicStatus.textContent = `Error: ${error.message}`;
+                updateProfilePicBtn.disabled = false;
+            });
+        });
+
+        // Update Password
+        updatePasswordBtn.addEventListener('click', () => {
+            const user = auth.currentUser;
+            const newPassword = newPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (!user) {
+                passwordStatus.style.color = 'red';
+                passwordStatus.textContent = 'You must be logged in to change your password.';
+                return;
+            }
+            if (newPassword.length < 6) {
+                passwordStatus.style.color = 'red';
+                passwordStatus.textContent = 'Password must be at least 6 characters long.';
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                passwordStatus.style.color = 'red';
+                passwordStatus.textContent = 'Passwords do not match.';
+                return;
+            }
+
+            user.updatePassword(newPassword).then(() => {
+                passwordStatus.style.color = '#28a745';
+                passwordStatus.textContent = 'Password updated successfully!';
+                newPasswordInput.value = '';
+                confirmPasswordInput.value = '';
+            }).catch(error => {
+                console.error("Error updating password:", error);
+                passwordStatus.style.color = 'red';
+                if (error.code === 'auth/requires-recent-login') {
+                    passwordStatus.textContent = 'Please log out and log back in to change your password.';
+                } else {
+                    passwordStatus.textContent = `Error: ${error.message}`;
+                }
+            });
+        });
+
+        // --- Other Panel Logic (Unchanged) ---
+        function renderModUsers() { /* ... */ }
+        function renderAdminUsers() { /* ... */ }
+        function renderExecutiveUsers(tableBodyId, checkboxClass) { /* ... */ }
+        function setupExecutiveBulkActions(selectAllId, checkboxClass, ipBanBtnId, banBtnId, removeBtnId) { /* ... */ }
+        // ... (all other existing functions) ...
+        renderModUsers();
+        // ... (all other function calls) ...
+    </script>
 </body>
 </html>
 
